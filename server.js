@@ -108,6 +108,48 @@ app.get("/api/categories", (request, response) => {
     });
 });
 
+app.get("/api/reports", (request, response) => {
+    const { language_id, category_id, start_date, end_date } = request.query;
+    let query = `SELECT p.id, p.name, p.description, p.source_link, p.completion_date, l.name as language, c.name as category 
+                 FROM projects p
+                 LEFT JOIN languages l ON p.language_id = l.id
+                 LEFT JOIN categories c ON p.category_id = c.id
+                 WHERE 1=1`;
+    const params = [];
+
+    if (language_id) {
+        query += " AND p.language_id = ?";
+        params.push(language_id);
+    }
+
+    if (category_id) {
+        query += " AND p.category_id = ?";
+        params.push(category_id);
+    }
+
+    if (start_date) {
+        query += " AND p.completion_date >= ?";
+        params.push(start_date);
+    }
+
+    if (end_date) {
+        query += " AND p.completion_date <= ?";
+        params.push(end_date);
+    }
+
+    db.all(query, params, (err, rows) => {
+        if (err) {
+            response.status(400).json({ "error": err.message });
+            return;
+        }
+
+        response.json({
+            "message": "success",
+            "data": rows
+        });
+    });
+});
+
 app.post("/api/categories", (request, response) => {
     const { name } = request.body;
     db.run(`INSERT INTO categories (name) VALUES (?)`, [name], function (err) {
