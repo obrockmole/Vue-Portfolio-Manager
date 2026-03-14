@@ -3,33 +3,20 @@
     <h1>Project Portfolio</h1>
     <button @click="openModal(null)">Add Project</button>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-          <th>Source Link</th>
-          <th>Completion Date</th>
-          <th>Language</th>
-          <th>Category</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="p in projects" :key="p.id">
-          <td>{{ p.name }}</td>
-          <td>{{ p.description }}</td>
-          <td><a :href="p.source_link" target="_blank">{{ p.source_link }}</a></td>
-          <td>{{ p.completion_date }}</td>
-          <td>{{ p.language }}</td>
-          <td>{{ p.category }}</td>
-          <td>
-            <button @click="openModal(p)">Edit</button>
-            <button @click="deleteProject(p.id)">Delete</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="project-cards">
+      <div v-for="p in projects" :key="p.id" class="card">
+        <h3>{{ p.name }}</h3>
+        <p v-if="p.description"><strong>Description:</strong> {{ p.description }}</p>
+        <p v-if="p.source_link"><strong>Source:</strong> <a :href="p.source_link" target="_blank">{{ p.source_link }}</a></p>
+        <p><strong>Completed:</strong> {{ p.completion_date }}</p>
+        <p><strong>Language:</strong> {{ p.language }}</p>
+        <p><strong>Category:</strong> {{ p.category }}</p>
+        <div class="card-actions">
+          <button @click="openModal(p)">Edit</button>
+          <button @click="deleteProject(p.id)">Delete</button>
+        </div>
+      </div>
+    </div>
 
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
@@ -39,7 +26,7 @@
           <input type="text" v-model="project.name" placeholder="Project Name" required>
           <textarea v-model="project.description" placeholder="Description"></textarea>
           <input type="text" v-model="project.source_link" placeholder="Source Link">
-          <input type="date" v-model="project.completion_date">
+          <input type="date" v-model="project.completion_date" required>
 
           <select v-model="project.language_id" required>
             <option disabled value="">Select a language</option>
@@ -174,3 +161,47 @@ export default {
 };
 </script>
 
+<style>
+.project-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  padding: 20px;
+}
+
+.card {
+  background-color: #2c2c2c;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 20px;
+  width: 300px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card h3 {
+  margin-top: 0;
+  color: #fff;
+}
+
+.card p {
+  margin: 10px 0;
+}
+
+.card a {
+  color: #00aaff;
+  text-decoration: none;
+}
+
+.card a:hover {
+  text-decoration: underline;
+}
+
+.card-actions {
+  margin-top: auto;
+  text-align: right;
+}
+</style>
