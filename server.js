@@ -9,49 +9,98 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/api/projects", (request, response) => {
-    db.all(`SELECT p.id, p.name, p.description, p.source_link, p.completion_date, l.name as language, c.name as category 
-            FROM projects p
-            LEFT JOIN languages l ON p.language_id = l.id
-            LEFT JOIN categories c ON p.category_id = c.id`, [], (err, rows) => {
+    const query = `
+        SELECT 
+            p.id, 
+            p.name, 
+            p.description, 
+            p.source_link, 
+            p.completion_date, 
+            GROUP_CONCAT(DISTINCT l.name) as languages, 
+            GROUP_CONCAT(DISTINCT c.name) as categories
+        FROM projects p
+        LEFT JOIN project_languages pl ON p.id = pl.project_id
+        LEFT JOIN languages l ON pl.language_id = l.id
+        LEFT JOIN project_categories pc ON p.id = pc.project_id
+        LEFT JOIN categories c ON pc.category_id = c.id
+        GROUP BY p.id
+    `;
+    db.all(query, [], (err, rows) => {
         if (err) {
             response.status(400).json({ "error": err.message });
             return;
         }
 
+        const projects = rows.map(row => ({
+            ...row,
+            languages: row.languages ? row.languages.split(',') : [],
+            categories: row.categories ? row.categories.split(',') : []
+        }));
+
         response.json({
             "message": "success",
-            "data": rows
+            "data": projects
         });
     });
 });
 
 app.post("/api/projects", (request, response) => {
-    const { name, description, source_link, completion_date, language_id, category_id } = request.body;
-    db.run(`INSERT INTO projects (name, description, source_link, completion_date, language_id, category_id) VALUES (?, ?, ?, ?, ?, ?)`,
-        [name, description, source_link, completion_date, language_id, category_id], function (err) {
-            if (err) {
-                response.status(400).json({ "error": err.message });
-                return;
-            }
+    const { name, description, source_link, completion_date, language_ids, category_ids } = request.body;
+    const insertProjectQuery = `INSERT INTO projects (name, description, source_link, completion_date) VALUES (?, ?, ?, ?)`;
 
-            response.json({
-                "message": "success",
-                "data": { id: this.lastID }
-            });
+    db.run(insertProjectQuery, [name, description, source_link, completion_date], function (err) {
+        if (err) {
+            response.status(400).json({ "error": err.message });
+            return;
+        }
+
+        const projectId = this.lastID;
+        const insertLanguagesQuery = `INSERT INTO project_languages (project_id, language_id) VALUES (?, ?)`;
+        language_ids.forEach(language_id => {
+            db.run(insertLanguagesQuery, [projectId, language_id]);
         });
+
+        const insertCategoriesQuery = `INSERT INTO project_categories (project_id, category_id) VALUES (?, ?)`;
+        category_ids.forEach(category_id => {
+            db.run(insertCategoriesQuery, [projectId, category_id]);
+        });
+
+        response.json({
+            "message": "success",
+            "data": { id: projectId }
+        });
+    });
 });
 
 app.put("/api/projects/:id", (request, response) => {
-    const { name, description, source_link, completion_date, language_id, category_id } = request.body;
-    db.run(`UPDATE projects SET name = ?, description = ?, source_link = ?, completion_date = ?, language_id = ?, category_id = ? WHERE id = ?`,
-        [name, description, source_link, completion_date, language_id, category_id, request.params.id], function (err) {
-            if (err) {
-                response.status(400).json({ "error": err.message });
-                return;
-            }
+    const projectId = request.params.id;
+    const { name, description, source_link, completion_date, language_ids, category_ids } = request.body;
+    const updateProjectQuery = `UPDATE projects SET name = ?, description = ?, source_link = ?, completion_date = ? WHERE id = ?`;
 
-            response.json({ message: "success", changes: this.changes });
+    db.run(updateProjectQuery, [name, description, source_link, completion_date, projectId], function (err) {
+        if (err) {
+            response.status(400).json({ "error": err.message });
+            return;
+        }
+
+        const deleteLanguagesQuery = `DELETE FROM project_languages WHERE project_id = ?`;
+        db.run(deleteLanguagesQuery, [projectId], () => {
+            const insertLanguagesQuery = `INSERT INTO project_languages (project_id, language_id) VALUES (?, ?)`;
+            language_ids.forEach(language_id => {
+                db.run(insertLanguagesQuery, [projectId, language_id]);
+            });
         });
+
+        const deleteCategoriesQuery = `DELETE FROM project_categories WHERE project_id = ?`;
+        db.run(deleteCategoriesQuery, [projectId], () => {
+            const insertCategoriesQuery = `INSERT INTO project_categories (project_id, category_id) VALUES (?, ?)`;
+            category_ids.forEach(category_id => {
+                db.run(insertCategoriesQuery, [projectId, category_id]);
+            });
+        });
+
+        response.json({ message: "success", changes: this.changes });
+    });
 });
 
 app.delete("/api/projects/:id", (request, response) => {
@@ -89,7 +138,7 @@ app.post("/api/languages", (request, response) => {
 
         response.json({
             "message": "success",
-            "data": { id: this.lastID }
+            "data": { id: this.lastID, name: name }
         });
     });
 });
@@ -160,7 +209,7 @@ app.post("/api/categories", (request, response) => {
 
         response.json({
             "message": "success",
-            "data": { id: this.lastID }
+            "data": { id: this.lastID, name: name }
         });
     });
 });

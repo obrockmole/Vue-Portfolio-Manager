@@ -52,7 +52,7 @@ button {
 button:hover {
   background-color: #0056b3;
 }
-.modal-overlay {
+.form-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -63,20 +63,20 @@ button:hover {
   justify-content: center;
   align-items: center;
 }
-.modal-content {
+.form-content {
   background-color: #2c2c2c;
   padding: 20px;
   border-radius: 10px;
   width: 500px;
 }
-.modal-content h2 {
+.form-content h2 {
   color: #fff;
 }
-.modal-content form {
+.form-content form {
   display: flex;
   flex-direction: column;
 }
-.modal-content input, .modal-content textarea, .modal-content select {
+.form-content input, .form-content textarea, .form-content select {
   background-color: #333;
   color: #e0e0e0;
   border: 1px solid #555;

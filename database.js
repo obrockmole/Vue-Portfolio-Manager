@@ -29,11 +29,27 @@ db.serialize(() => {
             name TEXT NOT NULL,
             description TEXT,
             source_link TEXT,
-            completion_date TEXT,
+            completion_date TEXT
+        )`
+    );
+
+    db.run(
+        `CREATE TABLE IF NOT EXISTS project_languages (
+            project_id INTEGER,
             language_id INTEGER,
+            PRIMARY KEY (project_id, language_id),
+            FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+            FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE
+        )`
+    );
+
+    db.run(
+        `CREATE TABLE IF NOT EXISTS project_categories (
+            project_id INTEGER,
             category_id INTEGER,
-            FOREIGN KEY (language_id) REFERENCES languages (id),
-            FOREIGN KEY (category_id) REFERENCES categories (id)
+            PRIMARY KEY (project_id, category_id),
+            FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+            FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
         )`
     );
 });

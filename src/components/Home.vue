@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1>Project Portfolio</h1>
-    <button @click="openModal(null)">Add Project</button>
+    <button @click="openForm(null)">Add Project</button>
 
     <div class="project-cards">
       <div v-for="p in projects" :key="p.id" class="card">
@@ -9,57 +9,40 @@
         <p v-if="p.description"><strong>Description:</strong> {{ p.description }}</p>
         <p v-if="p.source_link"><strong>Source:</strong> <a :href="p.source_link" target="_blank">{{ p.source_link }}</a></p>
         <p><strong>Completed:</strong> {{ p.completion_date }}</p>
-        <p><strong>Language:</strong> {{ p.language }}</p>
-        <p><strong>Category:</strong> {{ p.category }}</p>
+        <p><strong>Languages:</strong> {{ p.languages.join(', ') }}</p>
+        <p><strong>Categories:</strong> {{ p.categories.join(', ') }}</p>
         <div class="card-actions">
-          <button @click="openModal(p)">Edit</button>
+          <button @click="openForm(p)">Edit</button>
           <button @click="deleteProject(p.id)">Delete</button>
         </div>
       </div>
     </div>
 
-    <div v-if="showModal" class="modal-overlay">
-      <div class="modal-content">
+    <div v-if="showForm" class="form-overlay">
+      <div class="form-content">
         <h2>{{ isEditing ? "Edit Project" : "New Project" }}</h2>
-        <form @submit.prevent="saveProject">
-          <input type="hidden" v-model="project.id">
-          <input type="text" v-model="project.name" placeholder="Project Name" required>
-          <textarea v-model="project.description" placeholder="Description"></textarea>
-          <input type="text" v-model="project.source_link" placeholder="Source Link">
-          <input type="date" v-model="project.completion_date" required>
-
-          <select v-model="project.language_id" required>
-            <option disabled value="">Select a language</option>
-            <option v-for="language in languages" :key="language.id" :value="language.id">
-              {{ language.name }}
-            </option>
-          </select>
-          <div class="new-item-form">
-            <input type="text" v-model="newLanguage" placeholder="New Language Name">
-            <button type="button" @click="addNewLanguage">Save Language</button>
-          </div>
-
-          <select v-model="project.category_id" required>
-            <option disabled value="">Select a category</option>
-            <option v-for="category in categories" :key="category.id" :value="category.id">
-              {{ category.name }}
-            </option>
-          </select>
-           <div class="new-item-form">
-            <input type="text" v-model="newCategory" placeholder="New Category Name">
-            <button type="button" @click="addNewCategory">Save Category</button>
-          </div>
-
-          <button type="submit">{{ isEditing ? "Update" : "Add Project" }}</button>
-          <button type="button" @click="closeModal">Cancel</button>
-        </form>
+        <ProjectForm
+          :project="project"
+          :languages="languages"
+          :categories="categories"
+          :is-editing="isEditing"
+          @cancel="closeForm"
+          @submit="saveProject"
+          @add-language="addNewLanguage"
+          @add-category="addNewCategory"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import ProjectForm from "@/components/ProjectForm.vue";
+
 export default {
+    components: {
+    ProjectForm
+  },
   data() {
     return {
       projects: [],
@@ -71,13 +54,13 @@ export default {
         description: "",
         source_link: "",
         completion_date: "",
-        language_id: "",
-        category_id: ""
+        language_ids: [],
+        category_ids: []
       },
       isEditing: false,
-      showModal: false,
-      newLanguage: "",
-      newCategory: ""
+      showForm: false,
+      newLanguages: [],
+      newCategories: []
     };
   },
   created() {
@@ -91,44 +74,95 @@ export default {
         this.projects = response.data.data;
       });
     },
+
     fetchLanguages() {
-      this.$axios.get("languages").then(response => {
+      return this.$axios.get("languages").then(response => {
         this.languages = response.data.data;
       });
     },
+
     fetchCategories() {
-      this.$axios.get("categories").then(response => {
+      return this.$axios.get("categories").then(response => {
         this.categories = response.data.data;
       });
     },
-    openModal(project) {
+
+    openForm(project) {
       if (project) {
         this.isEditing = true;
-        this.project = { ...project, language_id: this.languages.find(l => l.name === project.language)?.id, category_id: this.categories.find(c => c.name === project.category)?.id };
+        this.project = {
+          ...project,
+          language_ids: this.languages.filter(l => project.languages.includes(l.name)).map(l => l.id),
+          category_ids: this.categories.filter(c => project.categories.includes(c.name)).map(c => c.id)
+        };
       } else {
         this.resetForm();
       }
-      this.showModal = true;
+      this.showForm = true;
     },
-    closeModal() {
-      this.showModal = false;
+
+    closeForm() {
+      this.showForm = false;
       this.resetForm();
     },
-    saveProject() {
+
+    addNewLanguage(newLanguageName) {
+      this.$axios.post("languages", { name: newLanguageName }).then(response => {
+        this.fetchLanguages().then(() => {
+          this.newLanguages.push({
+            id: response.data.data.id,
+            name: newLanguageName
+          });
+          this.languages.push(response.data.data.id);
+        });
+      });
+    },
+
+    addNewCategory(newCategoryName) {
+      this.$axios.post("categories", { name: newCategoryName }).then(response => {
+        this.fetchCategories().then(() => {
+          this.newCategories.push({
+            id: response.data.data.id,
+            name: newCategoryName
+          });
+          this.categories.push(response.data.data.id);
+        });
+      });
+    },
+
+    saveProject(projectData) {
+      const language_ids = projectData.language_ids.map(lang => {
+        const newLang = this.newLanguages.find(l => l.name === lang.name);
+        return newLang ? newLang.id: lang.id;
+      });
+
+      const category_ids = projectData.category_ids.map(cat => {
+        const newCat = this.newCategories.find(c => c.name === cat.name);
+        return newCat ? newCat.id : cat.id;
+      });
+
+      const data = {
+        ...projectData,
+        language_ids,
+        category_ids,
+      };
+
       const action = this.isEditing
-        ? this.$axios.put(`projects/${this.project.id}`, this.project)
-        : this.$axios.post("projects", this.project);
+        ? this.$axios.put(`projects/${this.project.id}`, data)
+        : this.$axios.post("projects", data);
 
       action.then(() => {
         this.fetchProjects();
-        this.closeModal();
+        this.closeForm();
       });
     },
+
     deleteProject(id) {
       this.$axios.delete(`projects/${id}`).then(() => {
         this.fetchProjects();
       });
     },
+
     resetForm() {
       this.isEditing = false;
       this.project = {
@@ -137,31 +171,17 @@ export default {
         description: "",
         source_link: "",
         completion_date: "",
-        language_id: "",
-        category_id: ""
+        language_ids: [],
+        category_ids: []
       };
-    },
-    addNewLanguage() {
-      this.$axios.post("languages", { name: this.newLanguage }).then(response => {
-        this.fetchLanguages().then(() => {
-            this.project.language_id = response.data.data.id;
-            this.newLanguage = "";
-        });
-      });
-    },
-    addNewCategory() {
-      this.$axios.post("categories", { name: this.newCategory }).then(response => {
-        this.fetchCategories().then(() => {
-            this.project.category_id = response.data.data.id;
-            this.newCategory = "";
-        });
-      });
+      this.newLanguages = [];
+      this.newCategories = [];
     }
   }
 };
 </script>
 
-<style>
+<style scoped>
 .project-cards {
   display: flex;
   flex-wrap: wrap;
