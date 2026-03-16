@@ -190,36 +190,6 @@ export default {
   padding: 20px;
 }
 
-.card {
-  background-color: #2c2c2c;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 20px;
-  width: 300px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.card h3 {
-  margin-top: 0;
-  color: #fff;
-}
-
-.card p {
-  margin: 10px 0;
-}
-
-.card a {
-  color: #00aaff;
-  text-decoration: none;
-}
-
-.card a:hover {
-  text-decoration: underline;
-}
-
 .card-actions {
   margin-top: auto;
   text-align: right;

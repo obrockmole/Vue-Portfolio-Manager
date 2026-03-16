@@ -1,43 +1,68 @@
 <template>
   <div>
-    <h2>Reports</h2>
+    <h1>Reports</h1>
     <div class="filters">
-      <select v-model="selectedLanguage">
-        <option value="">All Languages</option>
-        <option v-for="lang in languages" :key="lang.id" :value="lang.id">{{ lang.name }}</option>
-      </select>
-      <select v-model="selectedCategory">
-        <option value="">All Categories</option>
-        <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-      </select>
-      <input type="date" v-model="startDate" placeholder="Start Date">
-      <input type="date" v-model="endDate" placeholder="End Date">
-      <button @click="generateReport">Generate Report</button>
+      <Vueform :model="form" @submit="generateReport">
+        <TagsElement
+            name="language_ids"
+            label="Languages"
+            :items="languages"
+            value-prop="id"
+            label-prop="name"
+            placeholder="Select languages"
+            :columns="{
+              container: 3,
+            }"
+        />
+        <TagsElement
+            name="category_ids"
+            label="Categories"
+            :items="categories"
+            value-prop="id"
+            label-prop="name"
+            placeholder="Select categories"
+            :columns="{
+              container: 3,
+            }"
+        />
+        <DateElement
+            name="start_date"
+            label="Start Date"
+            placeholder="Start Date"
+            display-format="DD/MM/YYYY"
+            :columns="{
+              container: 3,
+            }"
+        />
+        <DateElement
+            name="end_date"
+            label="End Date"
+            placeholder="End Date"
+            display-format="DD/MM/YYYY"
+            :columns="{
+              container: 3,
+            }"
+        />
+
+        <ButtonElement name="submit" button-label="Generate Report" :submits="true" />
+
+        <StaticElement
+            name="divider"
+            tag="hr"
+            v-if="reportData"
+        />
+      </Vueform>
     </div>
-    <div v-if="reportData">
-      <h3>Report Results</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Source Link</th>
-            <th>Completion Date</th>
-            <th>Language</th>
-            <th>Category</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="project in reportData" :key="project.id">
-            <td>{{ project.name }}</td>
-            <td>{{ project.description }}</td>
-            <td><a :href="project.source_link" target="_blank">{{ project.source_link }}</a></td>
-            <td>{{ project.completion_date }}</td>
-            <td>{{ project.language }}</td>
-            <td>{{ project.category }}</td>
-          </tr>
-        </tbody>
-      </table>
+
+    <div class="report-cards">
+      <div v-for="p in reportData" :key="p.id" class="card">
+        <h3>{{ p.name }}</h3>
+        <p v-if="p.description"><strong>Description:</strong> {{ p.description }}</p>
+        <p v-if="p.source_link"><strong>Source:</strong> <a :href="p.source_link" target="_blank">{{ p.source_link }}</a></p>
+        <p><strong>Completed:</strong> {{ p.completion_date }}</p>
+        <p><strong>Languages:</strong> {{ p.languages.join(', ') }}</p>
+        <p><strong>Categories:</strong> {{ p.categories.join(', ') }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -46,12 +71,14 @@
 export default {
   data() {
     return {
+      form: {
+        language_ids: [],
+        category_ids: [],
+        start_date: "",
+        end_date: "",
+      },
       languages: [],
       categories: [],
-      selectedLanguage: "",
-      selectedCategory: "",
-      startDate: "",
-      endDate: "",
       reportData: null
     };
   },
@@ -70,12 +97,12 @@ export default {
         this.categories = response.data.data;
       });
     },
-    generateReport() {
+    generateReport(form$) {
       const params = {
-        language_id: this.selectedLanguage,
-        category_id: this.selectedCategory,
-        start_date: this.startDate,
-        end_date: this.endDate
+        language_ids: form$.data.language_ids.join(','),
+        category_ids: form$.data.category_ids.join(','),
+        start_date: form$.data.start_date,
+        end_date: form$.data.end_date
       };
       this.$axios.get("/reports", { params }).then(response => {
         this.reportData = response.data.data;
@@ -92,15 +119,12 @@ export default {
 .filters select, .filters input {
   margin-right: 10px;
 }
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
-}
-th {
-  background-color: #f2f2f2;
+
+.report-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  padding: 20px;
 }
 </style>

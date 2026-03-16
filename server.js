@@ -158,22 +158,39 @@ app.get("/api/categories", (request, response) => {
 });
 
 app.get("/api/reports", (request, response) => {
-    const { language_id, category_id, start_date, end_date } = request.query;
-    let query = `SELECT p.id, p.name, p.description, p.source_link, p.completion_date, l.name as language, c.name as category 
-                 FROM projects p
-                 LEFT JOIN languages l ON p.language_id = l.id
-                 LEFT JOIN categories c ON p.category_id = c.id
-                 WHERE 1=1`;
+    const { language_ids, category_ids, start_date, end_date } = request.query;
+    let query = `
+        SELECT 
+            p.id, 
+            p.name, 
+            p.description, 
+            p.source_link, 
+            p.completion_date, 
+            GROUP_CONCAT(DISTINCT l.name) as languages, 
+            GROUP_CONCAT(DISTINCT c.name) as categories
+        FROM projects p
+        LEFT JOIN project_languages pl ON p.id = pl.project_id
+        LEFT JOIN languages l ON pl.language_id = l.id
+        LEFT JOIN project_categories pc ON p.id = pc.project_id
+        LEFT JOIN categories c ON pc.category_id = c.id
+        WHERE 1=1
+    `;
     const params = [];
 
-    if (language_id) {
-        query += " AND p.language_id = ?";
-        params.push(language_id);
+    if (language_ids) {
+        const langIds = language_ids.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+        if (langIds.length > 0) {
+            query += ` AND p.id IN (SELECT project_id FROM project_languages WHERE language_id IN (${langIds.map(() => '?').join(',')}))`;
+            params.push(...langIds);
+        }
     }
 
-    if (category_id) {
-        query += " AND p.category_id = ?";
-        params.push(category_id);
+    if (category_ids) {
+        const catIds = category_ids.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+        if (catIds.length > 0) {
+            query += ` AND p.id IN (SELECT project_id FROM project_categories WHERE category_id IN (${catIds.map(() => '?').join(',')}))`;
+            params.push(...catIds);
+        }
     }
 
     if (start_date) {
@@ -185,16 +202,24 @@ app.get("/api/reports", (request, response) => {
         query += " AND p.completion_date <= ?";
         params.push(end_date);
     }
+    
+    query += " GROUP BY p.id";
 
     db.all(query, params, (err, rows) => {
         if (err) {
             response.status(400).json({ "error": err.message });
             return;
         }
+        
+        const projects = rows.map(row => ({
+            ...row,
+            languages: row.languages ? row.languages.split(',') : [],
+            categories: row.categories ? row.categories.split(',') : []
+        }));
 
         response.json({
             "message": "success",
-            "data": rows
+            "data": projects
         });
     });
 });
