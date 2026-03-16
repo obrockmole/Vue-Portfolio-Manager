@@ -1,5 +1,5 @@
 <template>
-  <Vueform @submit="submitForm" :data="project">
+  <Vueform @submit="submitForm" :data="project" validate-on="submit">
     <TextElement
         name="name"
         label="Project Name"
@@ -18,11 +18,7 @@
         name="source_link"
         label="Source"
         input-type="url"
-        :rules="[
-          'nullable',
-          'required',
-          'url',
-        ]"
+        :rules="[source]"
         placeholder="http(s)://example.com"
         :floating="false"
         :columns="{
@@ -33,9 +29,6 @@
         name="completion_date"
         label="Completion Date"
         display-format="DD/MM/YYYY"
-        :rules="[
-          'required',
-        ]"
         :columns="{
           label: 4,
         }"
@@ -96,7 +89,19 @@
 </template>
 
 <script>
-import { Vueform, useVueform } from "@vueform/vueform"
+import { Vueform, useVueform, Validator } from "@vueform/vueform"
+
+const source = class extends Validator {
+  get msg() {
+    return "The source link must be a valid URL.";
+  }
+
+  check(value) {
+    if (value === "" || value === null) return true;
+    const pattern = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-]*)*\/?$/;
+    return pattern.test(value);
+  }
+}
 
 export default {
   mixins: [Vueform],
@@ -132,6 +137,11 @@ export default {
 
     addNewCategory(name) {
       this.$emit("add-category", name)
+    }
+  },
+  data() {
+    return {
+      source
     }
   }
 };
