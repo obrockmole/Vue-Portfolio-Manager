@@ -1,5 +1,5 @@
 <template>
-  <Vueform @submit="submitForm" :data="project" validate-on="submit">
+  <Vueform :endpoint="false" @submit="submitForm" :data="project" validate-on="submit">
     <TextElement
         name="name"
         label="Project Name"
@@ -9,10 +9,12 @@
         :rules="[
           'required',
         ]"
+        :default="project.name || ''"
     />
     <TextareaElement
         name="description"
         label="Description"
+        :default="project.description || ''"
     />
     <TextElement
         name="source_link"
@@ -24,14 +26,17 @@
         :columns="{
           label: 3,
         }"
+        :default="project.source_link || ''"
     />
     <DateElement
         name="completion_date"
         label="Completion Date"
         display-format="DD/MM/YYYY"
+        value-format="YYYY-MM-DD"
         :columns="{
           label: 4,
         }"
+        :default="project.completion_date || ''"
     />
     <TagsElement
         name="language_ids"
@@ -49,6 +54,7 @@
         value-prop="id"
         label-prop="name"
         @tag="v => addNewLanguage(v)"
+        :default="projectLanguages"
     />
     <TagsElement
         name="category_ids"
@@ -66,6 +72,7 @@
         value-prop="id"
         label-prop="name"
         @tag="v => addNewCategory(v)"
+        :default="projectCategories"
     />
     <ButtonElement
         name="cancel"
@@ -123,6 +130,22 @@ export default {
     isEditing: {
       type: Boolean,
       default: false,
+    }
+  },
+  computed: {
+    projectLanguages() {
+      if (!this.project || !this.project.language_ids) {
+        return [];
+      }
+
+      return this.project.language_ids.map(langId => this.languages.find(l => l.id === langId)).filter(Boolean);
+    },
+    projectCategories() {
+      if (!this.project || !this.project.category_ids) {
+        return [];
+      }
+      
+      return this.project.category_ids.map(catId => this.categories.find(c => c.id === catId)).filter(Boolean);
     }
   },
   methods: {

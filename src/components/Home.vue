@@ -113,7 +113,6 @@ export default {
             id: response.data.data.id,
             name: newLanguageName
           });
-          this.languages.push(response.data.data.id);
         });
       });
     },
@@ -125,7 +124,6 @@ export default {
             id: response.data.data.id,
             name: newCategoryName
           });
-          this.categories.push(response.data.data.id);
         });
       });
     },
