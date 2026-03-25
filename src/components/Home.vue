@@ -104,6 +104,7 @@ export default {
     closeForm() {
       this.showForm = false;
       this.resetForm();
+      this.fetchProjects();
     },
 
     addNewLanguage(newLanguageName) {
