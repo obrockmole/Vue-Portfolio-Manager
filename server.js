@@ -110,6 +110,12 @@ app.delete("/api/projects/:id", (request, response) => {
             return;
         }
 
+        const deleteLanguagesQuery = `DELETE FROM project_languages WHERE project_id = ?`;
+        db.run(deleteLanguagesQuery, request.params.id);
+
+        const deleteCategoriesQuery = `DELETE FROM project_categories WHERE project_id = ?`;
+        db.run(deleteCategoriesQuery, request.params.id);
+
         response.json({ message: "success", changes: this.changes });
     });
 });
