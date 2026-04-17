@@ -3,6 +3,51 @@
     <h1>Project Portfolio</h1>
     <button @click="openForm(null)">Add Project</button>
 
+    <div class="filters">
+      <Vueform :model="filterForm" @change="fetchProjects">
+        <TagsElement
+            name="language_ids"
+            label="Languages"
+            :items="languages"
+            value-prop="id"
+            label-prop="name"
+            placeholder="Select languages"
+            :columns="{
+              container: 3,
+            }"
+        />
+        <TagsElement
+            name="category_ids"
+            label="Categories"
+            :items="categories"
+            value-prop="id"
+            label-prop="name"
+            placeholder="Select categories"
+            :columns="{
+              container: 3,
+            }"
+        />
+        <DateElement
+            name="start_date"
+            label="Start Date"
+            placeholder="Start Date"
+            display-format="DD/MM/YYYY"
+            :columns="{
+              container: 3,
+            }"
+        />
+        <DateElement
+            name="end_date"
+            label="End Date"
+            placeholder="End Date"
+            display-format="DD/MM/YYYY"
+            :columns="{
+              container: 3,
+            }"
+        />
+      </Vueform>
+    </div>
+
     <div class="project-cards">
       <div v-for="p in projects" :key="p.id" class="card">
         <h3>{{ p.name }}</h3>
@@ -48,6 +93,12 @@ export default {
       projects: [],
       languages: [],
       categories: [],
+      filterForm: {
+        language_ids: [],
+        category_ids: [],
+        start_date: "",
+        end_date: "",
+      },
       project: {
         id: null,
         name: "",
@@ -69,8 +120,24 @@ export default {
     this.fetchCategories();
   },
   methods: {
-    fetchProjects() {
-      this.$axios.get("projects").then(response => {
+    fetchProjects(formData) {
+      let params = {};
+      if (formData && !formData.isTrusted && !formData.target) {
+        params = {
+          language_ids: (formData.language_ids || []).join(','),
+          category_ids: (formData.category_ids || []).join(','),
+          start_date: formData.start_date || "",
+          end_date: formData.end_date || ""
+        };
+      } else {
+        params = {
+          language_ids: this.filterForm.language_ids.join(','),
+          category_ids: this.filterForm.category_ids.join(','),
+          start_date: this.filterForm.start_date,
+          end_date: this.filterForm.end_date
+        };
+      }
+      this.$axios.get("reports", { params }).then(response => {
         this.projects = response.data.data;
       });
     },
@@ -181,6 +248,9 @@ export default {
 </script>
 
 <style scoped>
+.filters {
+  margin: 20px 0;
+}
 .project-cards {
   display: flex;
   flex-wrap: wrap;

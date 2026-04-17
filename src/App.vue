@@ -1,16 +1,17 @@
 <template>
   <div id="app">
-    <nav>
-      <router-link to="/">Home</router-link> |
-      <router-link to="/reports">Reports</router-link>
-    </nav>
-    <router-view/>
+    <Home />
   </div>
 </template>
 
 <script>
+import Home from "./components/Home.vue";
+
 export default {
-  name: "App"
+  name: "App",
+  components: {
+    Home
+  }
 }
 </script>
 
@@ -93,17 +94,6 @@ button:hover {
   margin-right: 10px;
   margin-bottom: 0;
 }
-nav {
-  margin: 20px 0;
-}
-nav a {
-  color: #007bff;
-  text-decoration: none;
-}
-nav a:hover {
-  text-decoration: underline;
-}
-
 .card {
   background-color: #2c2c2c;
   border: 1px solid #444;
