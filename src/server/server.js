@@ -12,7 +12,7 @@ const port = process.env.PORT;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "dist")));
+app.use(express.static(path.join(__dirname, "../../dist")));
 
 app.get("/api/projects", (request, response) => {
     const query = `
