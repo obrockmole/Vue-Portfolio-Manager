@@ -7,6 +7,6 @@ import vueformConfig from "../../vueform.config.js"
 const app = createApp(App)
 app.use(Vueform, vueformConfig);
 app.config.globalProperties.$axios = axios.create({
-    baseURL: "http://localhost:3000/api/",
+    baseURL: "/api/",
 });
 app.mount("#app")
