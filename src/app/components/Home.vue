@@ -82,7 +82,7 @@
 </template>
 
 <script>
-import ProjectForm from "@/components/ProjectForm.vue";
+import ProjectForm from "@/app/components/ProjectForm.vue";
 
 export default {
     components: {

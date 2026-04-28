@@ -1,6 +1,6 @@
 import sqlite3 from "sqlite3";
 
-const dbPath = process.env.DATABASE_PATH || "./portfolio.db";
+const dbPath = process.env.DATABASE_PATH || "../data/portfolio.db";
 
 const verboseDb = sqlite3.verbose();
 const db = new verboseDb.Database(dbPath, (err) => {
@@ -54,6 +54,9 @@ db.serialize(() => {
             FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
         )`
     );
+
+    db.run(`CREATE INDEX IF NOT EXISTS project_languages_index ON project_languages (language_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS project_categories_index ON project_categories (category_id)`);
 });
 
 export default db;

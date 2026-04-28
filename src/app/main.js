@@ -2,7 +2,7 @@ import { createApp } from "vue"
 import App from "./App.vue"
 import axios from "axios"
 import Vueform from "@vueform/vueform"
-import vueformConfig from "./../vueform.config"
+import vueformConfig from "../../vueform.config.js"
 
 const app = createApp(App)
 app.use(Vueform, vueformConfig);
