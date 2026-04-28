@@ -1,11 +1,13 @@
 import sqlite3 from "sqlite3";
 
+const dbPath = process.env.DATABASE_PATH || "./portfolio.db";
+
 const verboseDb = sqlite3.verbose();
-const db = new verboseDb.Database("./portfolio.db", (err) => {
+const db = new verboseDb.Database(dbPath, (err) => {
     if (err) {
         console.error(err.message);
     }
-    console.log("Connected to database.");
+    console.log(`Connected to database at ${dbPath}`);
 });
 
 db.serialize(() => {
